@@ -13,7 +13,7 @@ def sanitize_html(url: str, rem_tags: list[str] = None, keep_attribs: list[str] 
 
     if not rem_tags:
         rem_tags = ['style', 'script', 'link',
-                'path', 'svg', 'head', 'img']
+                    'path', 'svg', 'head', 'img']
     if not keep_attribs:
         keep_attribs = ['']
     html = requests.get(url).content
