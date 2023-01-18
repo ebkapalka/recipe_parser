@@ -30,8 +30,8 @@ def remove_specific_tags(soup: BeautifulSoup, tags: list[str]) -> BeautifulSoup:
     """
     Iterates through elements matching any tag in the provided list and removes them
     :param soup: HTML data, as a BeautifulSoup object
-    :param tags:
-    :return:
+    :param tags: tags of elements to remove
+    :return: BeautifulSoup object with extraneous data removed
     """
     for data in soup(tags):
         # Remove rem_tags
@@ -40,6 +40,11 @@ def remove_specific_tags(soup: BeautifulSoup, tags: list[str]) -> BeautifulSoup:
 
 
 def remove_empty_tags(soup: BeautifulSoup) -> BeautifulSoup:
+    """
+    Remove tags with no enclosed text
+    :param soup: HTML data, as a BeautifulSoup object
+    :return: BeautifulSoup object with extraneous data removed
+    """
     while True:
         empty_tags = []
         for elem in soup.find_all(True):
@@ -53,6 +58,12 @@ def remove_empty_tags(soup: BeautifulSoup) -> BeautifulSoup:
 
 
 def remove_styling_tags(soup: BeautifulSoup) -> BeautifulSoup:
+    """
+    Remove extra nested Div and Span tags
+    :param soup: HTML data, as a BeautifulSoup object
+    :return: BeautifulSoup object with extraneous data removed
+    """
+
     divs = soup.find_all(['div', 'span'])
     for div in divs[1:]:
         div.unwrap()
@@ -60,12 +71,25 @@ def remove_styling_tags(soup: BeautifulSoup) -> BeautifulSoup:
 
 
 def remove_comments(soup: BeautifulSoup) -> BeautifulSoup:
+    """
+    Remove comments from HTML
+    :param soup: HTML data, as a BeautifulSoup object
+    :return: BeautifulSoup object with extraneous data removed
+    """
+
     for comment in soup.find_all(string=lambda text: isinstance(text, Comment)):
         comment.extract()
     return soup
 
 
 def remove_attributes(soup: BeautifulSoup, keep_attribs: list[str]) -> BeautifulSoup:
+    """
+    Remove attributes from elements to simplify and reduce character count
+    :param soup: HTML data, as a BeautifulSoup object
+    :param keep_attribs: list of attributes to retain (default None)
+    :return: BeautifulSoup object with extraneous data removed
+    """
+
     for element in soup.find_all():
         temp_attrs = element.attrs.copy()
         for attribute in element.attrs:
