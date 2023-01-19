@@ -1,3 +1,4 @@
+# TODO: make this into a generator so it can take one set of information at a time
 def tokenize_html(html: str, prompt_length: int = 250, max_tokens: int = 4000) -> list[str]:
     lines = html.split('\n')
     current_token = ''
