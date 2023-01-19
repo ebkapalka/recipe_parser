@@ -2,7 +2,7 @@ from bs4 import BeautifulSoup, Comment
 import requests
 
 
-def sanitize_html(url: str, rem_tags: list[str] = None, keep_attribs: list[str] = None) -> BeautifulSoup:
+def sanitize_html(url: str, rem_tags: list[str] = None) -> BeautifulSoup:
     """
     God function to call separate sanitizing functions and return sanitized HTML
     :param url: the URL path to the page to be sanitized
@@ -12,18 +12,26 @@ def sanitize_html(url: str, rem_tags: list[str] = None, keep_attribs: list[str] 
     """
 
     if not rem_tags:
-        rem_tags = ['style', 'script', 'link',
-                    'path', 'svg', 'head', 'img']
-    if not keep_attribs:
-        keep_attribs = ['']
+        rem_tags = ['style', 'script', 'link', 'path',
+                    'svg', 'head', 'header', 'img',
+                    'footer', 'button', 'label']
     html = requests.get(url).content
     soup = BeautifulSoup(html, "html.parser")
-    soup = remove_specific_tags(soup, rem_tags)
-    soup = remove_attributes(soup, keep_attribs)
+    '''soup = remove_specific_tags(soup, rem_tags)
     soup = remove_empty_tags(soup)
+    soup = remove_attributes(soup)
     soup = remove_styling_tags(soup)
+
     soup = remove_comments(soup)
-    return soup
+    return soup'''
+
+    for elem in soup(['style', 'script']):
+        # Remove tags
+        elem.decompose()
+    for tag in soup.find_all():
+        if not list(tag.stripped_strings):
+            tag.extract()
+    print(soup.prettify())
 
 
 def remove_specific_tags(soup: BeautifulSoup, tags: list[str]) -> BeautifulSoup:
@@ -33,9 +41,9 @@ def remove_specific_tags(soup: BeautifulSoup, tags: list[str]) -> BeautifulSoup:
     :param tags: tags of elements to remove
     :return: BeautifulSoup object with extraneous data removed
     """
-    for data in soup(tags):
+    for elem in soup(tags):
         # Remove rem_tags
-        data.extract()
+        elem.decompose()
     return soup
 
 
@@ -82,7 +90,7 @@ def remove_comments(soup: BeautifulSoup) -> BeautifulSoup:
     return soup
 
 
-def remove_attributes(soup: BeautifulSoup, keep_attribs: list[str]) -> BeautifulSoup:
+def remove_attributes(soup: BeautifulSoup) -> BeautifulSoup:
     """
     Remove attributes from elements to simplify and reduce character count
     :param soup: HTML data, as a BeautifulSoup object
@@ -91,9 +99,5 @@ def remove_attributes(soup: BeautifulSoup, keep_attribs: list[str]) -> Beautiful
     """
 
     for element in soup.find_all():
-        temp_attrs = element.attrs.copy()
-        for attribute in element.attrs:
-            if attribute not in keep_attribs:
-                del temp_attrs[attribute]
-        element.attrs = temp_attrs
+        element.attrs = {}
     return soup
