@@ -1,103 +1,93 @@
-from bs4 import BeautifulSoup, Comment
+from urllib.parse import urlparse
+from bs4 import BeautifulSoup
+from copy import copy
 import requests
 
 
-def sanitize_html(url: str, rem_tags: list[str] = None) -> BeautifulSoup:
+def sanitize_html(url: str, tags: list[str] = None) -> BeautifulSoup:
     """
     God function to call separate sanitizing functions and return sanitized HTML
-    :param url: the URL path to the page to be sanitized
-    :param rem_tags: HTML tags to remove
-    :param keep_attribs: HTML attributes to retain
-    :return: BeautifulSoup object with extraneous data removed
+    :return:
     """
-
-    if not rem_tags:
-        rem_tags = ['style', 'script', 'link', 'path',
-                    'svg', 'head', 'header', 'img',
-                    'footer', 'button', 'label']
-    html = requests.get(url).content
-    soup = BeautifulSoup(html, "html.parser")
-    '''soup = remove_specific_tags(soup, rem_tags)
+    if not tags:
+        tags = ['style', 'script', 'link', 'a',
+                'head', 'svg', 'footer', 'img']
+    soup = get_soup(url)
+    soup = remove_tags(soup, tags)
+    soup = remove_attribs(soup)
     soup = remove_empty_tags(soup)
-    soup = remove_attributes(soup)
-    soup = remove_styling_tags(soup)
+    soup = remove_sdivs(soup)
 
-    soup = remove_comments(soup)
-    return soup'''
+    lines = soup.prettify().split('\n')
+    lines = [l.strip() for l in lines]
+    return ''.join(lines)
 
-    for elem in soup(['style', 'script']):
+
+def get_soup(url: str) -> BeautifulSoup:
+    parsed_url = urlparse(url)
+    if parsed_url.scheme in ['http', 'https']:
+        html = requests.get(url).content
+        soup = BeautifulSoup(html, "html.parser")
+    else:
+        with open(url, encoding='utf-8-sig') as f:
+            soup = BeautifulSoup(f, "html.parser")
+    return soup
+
+
+def remove_tags(soup: BeautifulSoup, tags: list[str]):
+    if 'a' in tags:
+        for tag in soup.find_all('a'):
+            tag.decompose()
+        tags.remove('a')
+    for elem in soup.find_all(tags):
         # Remove tags
         elem.decompose()
-    for tag in soup.find_all():
-        if not list(tag.stripped_strings):
-            tag.extract()
-    print(soup.prettify())
-
-
-def remove_specific_tags(soup: BeautifulSoup, tags: list[str]) -> BeautifulSoup:
-    """
-    Iterates through elements matching any tag in the provided list and removes them
-    :param soup: HTML data, as a BeautifulSoup object
-    :param tags: tags of elements to remove
-    :return: BeautifulSoup object with extraneous data removed
-    """
-    for elem in soup(tags):
-        # Remove rem_tags
-        elem.decompose()
     return soup
 
 
-def remove_empty_tags(soup: BeautifulSoup) -> BeautifulSoup:
-    """
-    Remove tags with no enclosed text
-    :param soup: HTML data, as a BeautifulSoup object
-    :return: BeautifulSoup object with extraneous data removed
-    """
-    while True:
-        empty_tags = []
-        for elem in soup.find_all(True):
-            if not elem.text.strip():
-                empty_tags.append(elem)
-        if not empty_tags:
-            break
-        for elem in empty_tags:
-            elem.decompose()
+def remove_attribs(soup: BeautifulSoup):
+    for tag in soup.find_all(True):
+        temp_tag = copy(tag)
+        temp_tag.clear()
+        if not temp_tag.get_text().strip():
+            tag.attrs = {}
     return soup
 
 
-def remove_styling_tags(soup: BeautifulSoup) -> BeautifulSoup:
-    """
-    Remove extra nested Div and Span tags
-    :param soup: HTML data, as a BeautifulSoup object
-    :return: BeautifulSoup object with extraneous data removed
-    """
-
-    divs = soup.find_all(['div', 'span'])
-    for div in divs[1:]:
-        div.unwrap()
+def remove_sdivs(soup: BeautifulSoup):
+    for tag in soup.find_all(['span', 'div']):
+        if not tag.string or not tag.string.strip():
+            tag.unwrap()
     return soup
 
 
-def remove_comments(soup: BeautifulSoup) -> BeautifulSoup:
-    """
-    Remove comments from HTML
-    :param soup: HTML data, as a BeautifulSoup object
-    :return: BeautifulSoup object with extraneous data removed
-    """
-
-    for comment in soup.find_all(string=lambda text: isinstance(text, Comment)):
-        comment.extract()
+def remove_empty_tags(soup: BeautifulSoup):
+    empty_tags = soup.find_all(lambda x: not x.get_text().strip())
+    while empty_tags:
+        for tag in empty_tags:
+            tag.decompose()
+        empty_tags = soup.find_all(lambda x: not x.get_text().strip())
     return soup
 
 
-def remove_attributes(soup: BeautifulSoup) -> BeautifulSoup:
-    """
-    Remove attributes from elements to simplify and reduce character count
-    :param soup: HTML data, as a BeautifulSoup object
-    :param keep_attribs: list of attributes to retain (default None)
-    :return: BeautifulSoup object with extraneous data removed
-    """
+def remove_a_tags(soup: BeautifulSoup) -> BeautifulSoup:
+    for tag in soup.find_all('a'):
+        tag.decompose()
+    return soup
 
-    for element in soup.find_all():
-        element.attrs = {}
+'''def remove_links(soup: BeautifulSoup):
+    for tag in soup.find_all(href=True):
+        del tag['href']
+    for tag in soup.find_all(src=True):
+        del tag['src']
+    return soup
+
+
+def remove_styles(soup: BeautifulSoup):
+    for tag in soup.find_all(style=True):
+        del tag['style']
+    return soup'''
+
+
+def remove_comments(soup: BeautifulSoup):
     return soup

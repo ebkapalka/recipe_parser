@@ -2,6 +2,7 @@ from process_html.sanitize import sanitize_html
 from process_html.tokenize import PromptGenerator
 from load_file import load_secrets
 import openai
+import os
 
 MODELS = {
     "text-davinci-003": {"Model": "GPT-3", "Max Request": 4000},
@@ -13,19 +14,18 @@ MODELS = {
 }
 
 if __name__ == '__main__':
-    recipe_url = "https://www.justonecookbook.com/pickled-ginger/"
+    recipe_url = os.path.join(os.getcwd(), "pickled_ginger.html")
     return_token_size: int = 500
     gpt_model = "text-davinci-003"
 
-    html = sanitize_html(recipe_url).prettify()
-    print(html)
-    secrets = load_secrets("secrets.json")
+    html = sanitize_html(recipe_url)
+
+    '''secrets = load_secrets("secrets.json")
     openai.api_key = secrets.get("OpenAI API Key", None)
     prompt_generator = PromptGenerator(html, max_tokens=MODELS[gpt_model]["Max Request"],
                                        return_tokens=return_token_size)
     prompt = prompt_generator.get_max_prompt()
-    print(prompt)
-    '''completions = openai.Completion.create(
+    completions = openai.Completion.create(
         engine=gpt_model,
         prompt=prompt,
         max_tokens=return_token_size,  # this is for the RESPONSE
